@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "NCCCoding",
+        "repositoryURL": "git@github.com:drewster99/NCCCoding.git",
+        "state": {
+          "branch": null,
+          "revision": "b9e51b1085a07e4a8856d7d9b5db82c01ca02bcc",
+          "version": "1.0.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
