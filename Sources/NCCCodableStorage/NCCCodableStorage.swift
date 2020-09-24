@@ -77,7 +77,7 @@ import NCCCoding
     ///   - directoryType: The directory type in which to locate or create the storage file.  Defaults to .documentDirectory.
     ///   - updateMode: The way data storage updates are to be applied.  Default is .afterIdle(seconds: 1.0).
     ///
-    init(wrappedValue initialValue: T,
+    public init(wrappedValue initialValue: T,
          filename: String,
          directoryType: FileManager.SearchPathDirectory = .documentDirectory,
          updateMode: UpdateMode = UpdateMode.default) {
@@ -94,7 +94,7 @@ import NCCCoding
     ///   - directoryType: The directory type in which to locate or create the storage file.  Defaults to .documentDirectory.
     ///   - updateMode: The way data storage updates are to be applied.  Default is .afterIdle(seconds: 1.0).
     ///
-    init(initialValue: T,
+    public init(initialValue: T,
          filename: String,
          directoryType: FileManager.SearchPathDirectory = .documentDirectory,
          updateMode: UpdateMode = UpdateMode.default) {
@@ -112,7 +112,7 @@ import NCCCoding
     ///   - directoryType: The directory type in which to locate or create the storage file.  Defaults to .documentDirectory.
     ///   - updateMode: The way data storage updates are to be applied.  Default is .afterIdle(seconds: 1.0).
     ///
-    init(defaultValue: T,
+    public init(defaultValue: T,
          filename: String,
          directoryType: FileManager.SearchPathDirectory = .documentDirectory,
          updateMode: UpdateMode = UpdateMode.default) {
@@ -129,7 +129,7 @@ import NCCCoding
     ///   - url: The file URL to be used for underlying storage.
     ///   - updateMode: The way data storage updates are to be applied.  Default is .afterIdle(seconds: 1.0).
     ///
-    init(wrappedValue initialValue: T,
+    public init(wrappedValue initialValue: T,
          url: URL,
          updateMode: UpdateMode = UpdateMode.default) {
 
@@ -144,7 +144,7 @@ import NCCCoding
     ///   - url: The file URL to be used for underlying storage.
     ///   - updateMode: The way data storage updates are to be applied.  Default is .afterIdle(seconds: 1.0).
     ///
-    init(initialValue: T,
+    public init(initialValue: T,
          url: URL,
          updateMode: UpdateMode = UpdateMode.default) {
 
@@ -159,7 +159,7 @@ import NCCCoding
     ///   - url: The file URL to be used for underlying storage.
     ///   - updateMode: The way data storage updates are to be applied.  Default is .afterIdle(seconds: 1.0).
     ///
-    init(defaultValue: T,
+    public init(defaultValue: T,
          url: URL,
          updateMode: UpdateMode = UpdateMode.default) {
 
@@ -178,7 +178,7 @@ extension NCCCodableStorage {
         case afterIdle(seconds: TimeInterval)
         case manual
 
-        static var `default`: UpdateMode { .afterIdle(seconds: 2.0) }
+        public static var `default`: UpdateMode { .afterIdle(seconds: 2.0) }
     }
 }
 
