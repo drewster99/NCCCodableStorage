@@ -26,7 +26,7 @@ import NCCCoding
     }
 
     /// The underlying data storage
-    @ObservedObject private var storage: NCCCodableJSONStorage<T>
+    @StateObject private var storage: NCCCodableJSONStorage<T>
 
     /// URL of underlying storage file
     public var url: URL {
@@ -48,12 +48,12 @@ import NCCCoding
         // These SEEM to be equivalent.  But are they?
 
         // Better?
-        $storage.value
+//        $storage.value
 
         // Clearer?
-        // Binding<T>(get: { self.storage.value },
-        //            set: { (newValue) in self.storage.value = newValue }
-        // )
+         Binding<T>(get: { self.storage.value },
+                    set: { (newValue) in self.storage.value = newValue }
+         )
     }
 
     /// Saves the stored underlying value.  Used in manual mode.
@@ -148,7 +148,7 @@ import NCCCoding
          url: URL,
          updateMode: UpdateMode = UpdateMode.default) {
 
-        self.storage = NCCCodableJSONStorage(initialValue, url: url, updateMode: updateMode)
+        self._storage = StateObject(wrappedValue: NCCCodableJSONStorage(initialValue, url: url, updateMode: updateMode))
     }
 
     /// Initializes a property which has underlying storage backed by a "Codable" encoded local JSON file.
@@ -164,9 +164,9 @@ import NCCCoding
          updateMode: UpdateMode = UpdateMode.default) {
 
         if let initialValue: T = NCCCoding.decode(url) {
-            self.storage = NCCCodableJSONStorage(initialValue, url: url, updateMode: updateMode)
+            self._storage = StateObject(wrappedValue: NCCCodableJSONStorage(initialValue, url: url, updateMode: updateMode))
         } else {
-            self.storage = NCCCodableJSONStorage(defaultValue, url: url, updateMode: updateMode)
+                self._storage = StateObject(wrappedValue: NCCCodableJSONStorage(defaultValue, url: url, updateMode: updateMode))
         }
     }
 }
@@ -179,92 +179,5 @@ extension NCCCodableStorage {
         case manual
 
         public static var `default`: UpdateMode { .afterIdle(seconds: 2.0) }
-    }
-}
-
-protocol NCCUnderlyingStorage: ObservableObject {
-    associatedtype T
-    var value: T { get set }
-    func save() throws
-}
-
-extension NCCCodableStorage {
-    /// Handles writing of the underlying JSON data store.
-    private class NCCCodableJSONStorage<T: Codable>: ObservableObject, NCCUnderlyingStorage {
-
-        private(set) var url: URL
-        private var updateTimerWorkItem: DispatchWorkItem?
-        private var isStorageUpdateNeeded = false
-
-        /// MARK: - NCCUnderlyingStorage conformance
-        public var value: T {
-            willSet {
-                objectWillChange.send()
-            }
-            didSet {
-                updater?()
-            }
-        }
-
-        /// Save to underlying storage
-        public func save() throws {
-            if let error = NCCCoding.encode(value, to: url) {
-                throw error
-            }
-            isStorageUpdateNeeded = false
-        }
-
-        /// Load from underlying storage
-        public func load() throws {
-            let result: Result<T, Error> = NCCCoding.decode(url)
-            switch result {
-            case .success(let loadedValue):
-                self.value = loadedValue
-            case .failure(let error):
-                throw error
-            }
-        }
-
-        private var updater: (() -> Void)?
-
-        private func updateCodedStorage() {
-            do {
-                try save()
-            } catch {
-                fatalError("\(#function) failed: \(error)")
-            }
-        }
-
-        init(_ value: T, url: URL, updateMode: UpdateMode) {
-            self.value = value
-            self.url = url
-
-            switch updateMode {
-            case .immediate:
-                updater = updateCodedStorage
-
-            case .afterIdle(let seconds):
-                updater = {
-                    self.isStorageUpdateNeeded = true
-                    self.updateTimerWorkItem?.cancel()
-                    self.updateTimerWorkItem = DispatchWorkItem {
-                        self.updateCodedStorage()
-                    }
-                    DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + seconds,
-                                                                      execute: self.updateTimerWorkItem!)
-                }
-
-            case .manual:
-                updater = nil
-            }
-        }
-
-        deinit {
-            updateTimerWorkItem?.cancel()
-            updateTimerWorkItem = nil
-            if isStorageUpdateNeeded {
-                updateCodedStorage()
-            }
-        }
     }
 }
