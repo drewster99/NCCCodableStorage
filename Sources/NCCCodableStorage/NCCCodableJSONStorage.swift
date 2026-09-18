@@ -19,7 +19,6 @@ extension NCCCodableStorage {
         /// MARK: - NCCUnderlyingStorage conformance
         public var value: JSONCodableValue {
             willSet {
-                print("NCCCodableStorage -- calling objectWillChange.send() because willSet \(value)")
                 objectWillChange.send()
             }
             didSet {
@@ -59,7 +58,6 @@ extension NCCCodableStorage {
         init(_ value: JSONCodableValue, url: URL, updateMode: UpdateMode) {
             self.value = value
             self.url = url
-            print("NCCCodableStorage -- NCCCodableJSONStorage -- INIT with updateMode \(updateMode)")
             switch updateMode {
             case .immediate:
                 updater = updateCodedStorage
@@ -81,7 +79,6 @@ extension NCCCodableStorage {
         }
 
         deinit {
-            print("NCCCodableStorage -- NCCCodableJSONStorage -- DEINIT")
             updateTimerWorkItem?.cancel()
             updateTimerWorkItem = nil
             if isStorageUpdateNeeded {
