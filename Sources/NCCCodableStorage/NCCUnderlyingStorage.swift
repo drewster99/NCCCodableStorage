@@ -3,6 +3,7 @@
 //  
 //
 //  Created by Andrew Benson on 5/4/24.
+//  Licensed under the MIT License. See LICENSE in the package root.
 //
 
 import SwiftUI

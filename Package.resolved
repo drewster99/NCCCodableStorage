@@ -3,7 +3,7 @@
     "pins": [
       {
         "package": "NCCCoding",
-        "repositoryURL": "git@github.com:drewster99/NCCCoding.git",
+        "repositoryURL": "https://github.com/drewster99/NCCCoding.git",
         "state": {
           "branch": null,
           "revision": "194802d1221843604728f56a3deaa201ea539669",

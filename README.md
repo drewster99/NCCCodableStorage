@@ -1,51 +1,97 @@
 # NCCCodableStorage
 
-**Automatic Codable storage to/from JSON**
-Twitter *@DrewsterBenson*
+A SwiftUI property wrapper that keeps a `Codable` value in a local JSON file. It works like `@State`, but the value is saved to disk when it changes.
 
-Whenever a defaultValue is given, **NCCCodableStorage** will attempt to load the initial value from the existing JSON at initialization time.  If a saved value cannot be loaded or decoded, the defaultValue is used as the initial value.
+## Requirements
 
-As above, any changes are immediately and synchronously written to storage.
+- iOS 14+ / macOS 11+
+- Swift 5.5+
+
+## Installation
+
+Add the package with Swift Package Manager:
 
 ```swift
-    struct MyData: Codable {
-        var name: String = "Mister Default"
-        var age: Double = 29
+dependencies: [
+    .package(url: "https://github.com/drewster99/NCCCodableStorage.git", from: "1.1.2")
+]
+```
+
+Then add `"NCCCodableStorage"` to your target's dependencies.
+
+## Usage
+
+Declare the property inside a SwiftUI `View`. The storage behind it is a `@StateObject`, so it is created once per view identity and only works correctly when SwiftUI installs it in a view. Outside a `View`, each access creates a new storage object and changes are not kept in memory.
+
+```swift
+import SwiftUI
+import NCCCodableStorage
+
+struct Profile: Codable {
+    var name: String = "Mister Default"
+    var age: Double = 29
+}
+
+struct ProfileView: View {
+    // Loads profile.json from the Documents directory if it exists and decodes;
+    // otherwise starts with Profile(). Changes are written 2 seconds after the last edit.
+    @NCCCodableStorage(defaultValue: Profile(), filename: "profile.json") var profile: Profile
+
+    var body: some View {
+        TextField("Name", text: $profile.name)
     }
-    
-    @NCCCodableStorage(defaultValue: MyData(), filename: "myData.json") var myData: MyData
+}
 ```
 
-At initialization, it will attempt to read an array of struct **MyData** from **myDataArray.json**.  If it cannot be read or decoded, the *defaultValue*, in this case an empty array, will initially be used.
+### Initial value
 
-Using **updateMode: .afterIdle(5.0)** will write updates back to the **myDataArray.json** storage only after the *wrappedValue* has not changed in at least 5.0 seconds.
+- **`defaultValue:`** reads the existing file when the storage is created. If the file is missing or can't be decoded, `defaultValue` is used.
+- **`initialValue:`** or a value after the declaration (`var x: T = value`) does **not** read the file. The property starts with the given value and the next automatic write overwrites any existing file.
 
 ```swift
-    @NCCCodableStorage(defaultValue: [],
-                       filename: "myDataArray.json",
-                       updateMode: .afterIdle(5.0)) var myDataArray: [MyData]
+// Loads the saved array, or starts empty.
+@NCCCodableStorage(defaultValue: [], filename: "items.json") var items: [Profile]
+
+// Starts with 8.675309 without reading someURL. Equivalent to:
+// @NCCCodableStorage(url: someURL) var jenny: Double = 8.675309
+@NCCCodableStorage(initialValue: 8.675309, url: someURL) var jenny: Double
 ```
 
-Initializing using **initialValue: ...** is the same as including it after the declaration.
+### Where the file lives
+
+Use `filename:` with an optional `directoryType:` (default `.documentDirectory`, user domain), or pass a full file `url:`. The parent directory of a custom URL must already exist.
 
 ```swift
-    // This:
-    @NCCCodableStorage(initialValue: 8.675309, url: someURL) var jenny: Double
-    
-    // is equivalent to this:
-    @NCCCodableStorage(url: someURL) var jenny: Double = 8.675309
+@NCCCodableStorage(defaultValue: [], filename: "cache.json", directoryType: .cachesDirectory)
+var cachedItems: [String]
 ```
 
-We can initialize with manual value updates instead of automatic also.  Data can then be manually loaded with:  **_someData.load()** or manually saved with: ** _someData.save()**.
+### Update modes
+
+| Mode | When changes are written |
+| --- | --- |
+| `.afterIdle(seconds:)` (default: `.afterIdle(seconds: 2.0)`) | Once the value has not changed for the given time. Pending changes are also written when the app moves to the background or terminates, and when the storage is released. |
+| `.immediate` | Synchronously, on every change. |
+| `.manual` | Only when you call `save()`. |
 
 ```swift
-    @NCCCodableStorage(filename: "someData.json", updateMode: .manual) var someData: [MyData] = []
+@NCCCodableStorage(defaultValue: [], filename: "items.json", updateMode: .afterIdle(seconds: 5.0))
+var items: [Profile]
+
+@NCCCodableStorage(filename: "draft.json", updateMode: .manual) var draft: [Profile] = []
+// Later, through the wrapper:
+try _draft.save()
+try _draft.load()
 ```
 
-Creates the full path for the file based onthe given directoryType.
+`save()` writes synchronously and throws on failure. `load()` replaces the value with the file's contents and throws if the file can't be read or decoded.
 
-```swift
-    @NCCCodableStorage(filename: "someFileName.json", directoryType: .desktopDirectory)
-    private var fooooo: [String] = ["hello", "there"]
-```
+### Errors
 
+A failed automatic write (`.immediate`, `.afterIdle`, or the flush when the app moves to the background, terminates, or the storage is released) logs a fault with `os.Logger` (subsystem `com.nuclearcyborg.NCCCodableStorage`) and then terminates the app with `fatalError`. To handle write errors yourself, use `.manual` and call `save()`, which throws.
+
+Files are written atomically, so a failed or interrupted write leaves the previous file intact.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
